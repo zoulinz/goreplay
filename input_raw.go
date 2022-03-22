@@ -91,14 +91,16 @@ func (i *RAWInput) PluginRead() (*Message, error) {
 		msg.Data = msgTCP.Data()
 	}
 
+	msgUUID := msgTCP.UUID()
 	var msgType byte = ResponsePayload
 	if msgTCP.Direction == tcp.DirIncoming {
 		msgType = RequestPayload
 		if i.config.RealIPHeader != "" {
 			msg.Data = proto.SetHeader(msg.Data, []byte(i.config.RealIPHeader), []byte(msgTCP.SrcAddr))
 		}
+		msg.Data = proto.SetHeader(msg.Data, []byte("Gor-Msg-Id"), msgUUID)
 	}
-	msg.Meta = payloadHeader(msgType, msgTCP.UUID(), msgTCP.Start.UnixNano(), msgTCP.End.UnixNano()-msgTCP.Start.UnixNano())
+	msg.Meta = payloadHeader(msgType, msgUUID, msgTCP.Start.UnixNano(), msgTCP.End.UnixNano()-msgTCP.Start.UnixNano())
 
 	// to be removed....
 	if msgTCP.Truncated {
