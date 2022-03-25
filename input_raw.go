@@ -100,6 +100,17 @@ func (i *RAWInput) PluginRead() (*Message, error) {
 		}
 		msg.Data = proto.SetHeader(msg.Data, []byte("Gor-Msg-Id"), msgUUID)
 	}
+
+	if len(msgTCP.Packets()) > 0 {
+		samplePacket := msgTCP.Packets()[0]
+		strconv.Itoa(int(samplePacket.SrcPort))
+		strconv.Itoa(int(samplePacket.DstPort))
+		gorTcpHeader := fmt.Sprintf("%s|%s",
+			net.JoinHostPort(samplePacket.SrcIP.String(), strconv.Itoa(int(samplePacket.SrcPort))),
+			net.JoinHostPort(samplePacket.DstIP.String(), strconv.Itoa(int(samplePacket.DstPort))))
+		msg.Data = proto.SetHeader(msg.Data, []byte("Gor-Tcp-Info"), []byte(gorTcpHeader))
+	}
+
 	msg.Meta = payloadHeader(msgType, msgUUID, msgTCP.Start.UnixNano(), msgTCP.End.UnixNano()-msgTCP.Start.UnixNano())
 
 	// to be removed....
