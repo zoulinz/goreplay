@@ -1,9 +1,12 @@
 FROM golang:1.17
 
-RUN apt-get update && apt-get install ruby vim-common -y
+RUN  sed -i 's#http://security.debian.org#https://mirrors.tuna.tsinghua.edu.cn#g' /etc/apt/sources.list \
+      && sed -i 's#http://deb.debian.org#https://mirrors.tuna.tsinghua.edu.cn#g' /etc/apt/sources.list \
+      && apt-get update && apt-get install ruby vim-common -y
 
 RUN apt-get install flex bison -y
-RUN wget http://www.tcpdump.org/release/libpcap-1.10.0.tar.gz && tar xzf libpcap-1.10.0.tar.gz && cd libpcap-1.10.0 && ./configure && make install
+#RUN wget http://www.tcpdump.org/release/libpcap-1.10.0.tar.gz && tar xzf libpcap-1.10.0.tar.gz && cd libpcap-1.10.0 && ./configure && make install
+RUN wget https://res-download.s3.cn-northwest-1.amazonaws.com.cn/antibot/goreplay/libpcap-1.10.0.tar.gz && tar xzf libpcap-1.10.0.tar.gz && cd libpcap-1.10.0 && ./configure && make install
 
 RUN go env -w GOPROXY=https://goproxy.cn,direct
 RUN go get github.com/google/gopacket
