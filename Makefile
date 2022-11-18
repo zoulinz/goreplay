@@ -86,10 +86,10 @@ install:
 build-env: build-x64-env build-arm64-env
 
 build-x64-env:
-	docker buildx build --platform linux/amd64 -t $(CONTAINER) -f Dockerfile.dev .
+	docker buildx build --load --platform linux/amd64 -t $(CONTAINER) -f Dockerfile.dev .
 
 build-arm64-env:
-	docker buildx build --platform linux/arm64 -t $(CONTAINER) -f Dockerfile.dev .
+	docker buildx build --load --platform linux/arm64 -t $(CONTAINER) -f Dockerfile.dev .
 
 build-docker:
 	docker build -t gor-dev -f Dockerfile .
