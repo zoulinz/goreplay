@@ -110,6 +110,8 @@ func (pckt *Packet) parse(data []byte, lType, lTypeLen int, cp *gopacket.Capture
 	ldata := data[lTypeLen:]
 	var proto byte
 	var netLayer, transLayer []byte
+	var payloadSize int
+	ip6 := false
 
 	if ldata[0]>>4 == 4 {
 		// IPv4 header
@@ -125,7 +127,10 @@ func (pckt *Packet) parse(data []byte, lType, lTypeLen int, cp *gopacket.Capture
 			return ErrHdrLength("IPv4 opts")
 		}
 		netLayer = ldata[:ihl]
+		//payloadSize is IP payload without IP header, it is the total length field - ip header length
+		payloadSize = (int(netLayer[2])<<8 | int(netLayer[3])) - ihl
 	} else if ldata[0]>>4 == 6 {
+		ip6 = true
 		if len(ldata) < 40 {
 			return ErrHdrLength("IPv6")
 		}
@@ -147,6 +152,8 @@ func (pckt *Packet) parse(data []byte, lType, lTypeLen int, cp *gopacket.Capture
 			totalLen += extLen
 		}
 		netLayer = ldata[:totalLen]
+		//ip6 payload length does not cover ip6 header
+		payloadSize = int(netLayer[4])<<8 | int(netLayer[5])
 	} else {
 		return ErrHdrExpected("IPv4 or IPv6")
 	}
@@ -172,7 +179,7 @@ func (pckt *Packet) parse(data []byte, lType, lTypeLen int, cp *gopacket.Capture
 	// There are case when packet have padding but dOf shows its not
 	empty := true
 	for i := 0; i < len(ndata[dOf:]); i++ {
-		if ndata[dOf:][i] != 0 {
+		if payloadSize != dOf {
 			empty = false
 			break
 		}
@@ -207,7 +214,12 @@ func (pckt *Packet) parse(data []byte, lType, lTypeLen int, cp *gopacket.Capture
 	pckt.ACK = transLayer[13]&0x10 != 0
 	pckt.Lost = uint32(cp.Length - cp.CaptureLength)
 
-	pckt.Payload = ndata[dOf:]
+	//ip6 Jumbo frame payloadSize is 0. Real size is in extent header
+	if ip6 && payloadSize == 0 {
+		pckt.Payload = ndata[dOf:]
+	} else {
+		pckt.Payload = ndata[dOf:payloadSize]
+	}
 
 	return nil
 }
